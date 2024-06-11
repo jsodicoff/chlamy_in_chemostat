@@ -140,20 +140,11 @@ def degreesToVolts(numDegrees):
 # Initial temperature goal based on tempCycle
 goal = degreesToVolts(tempCycle[0][0])
 
-# Print header rows for data file TODO, rewrite without microscope.
-#f = open(path+filetype,'w')
-#f.write('System ' + str(systemNumber) + ', Temp Cycle: ' + str(tempCycle)+'\n')
-#f.write('Pump Cycle Return Index = ' + str(pumpCycleReturnIndex) + ', Pump On Cycle: ' + str(pumpCycle)+', Pump Start Delay = ' + str(pumpStartDelay) +
-#        ', Use algae LED = ' + str(useAlgaeLED)+', Algae dimming = '+str(algaeDimming)+'\n')
-#f.write('Scope Pump Start Delay = ' + str(scopePumpStartDelay) + ', Scope Pump Duration = ' +str(scopePumpDuration)+ ', Scope Image Delay = ' + str(scopeImageDelay) + '\n')
-#f.write('Nominal Flow Rate (mL/m) = ' + str(nominalPumpFlowRate)+ ', Camera Images Per Minute = ' + str(camImageNum)+
-#        ', Number of cameras = ' + str(numberOfCameras) +
-#        ', Ignore camera serial = '+str(ignoreCamSerial) +
-#        ', Camera wait time = '+str(camWaitTime) +
-#        ', Default camera settings row = '+str(defaultCameraSettingRow)+
-#        ', Camera settings = '+str(camSettings)+ ', 30 Degree Voltage = ' + str(thirtyDegVolt) + ', Volts/Degree = ' + str(degVoltScale) + '\n')
-#f.write('Time (m),Photodiode voltage (V), Photodiode stdev (V), Temp. Setpoint (C), Temp. (C), Thermometer voltage (V), Thermometer stdev (V), Output, Output stdev (V), Pumps Started, Temp. Loop Index, Pump Loop Index, Kp = ' + str(Kp) + ",Ki = " + str(Ki) + ",Kd = " + str(Kd) + '\n')
-#f.close()
+# Print header rows for data file
+f = open(path+filetype,'w')
+f.write('System ' + str(systemNumber) + ', Temp Cycle: ' + str(tempCycle)+'\n')
+f.write('Time (m),Photodiode voltage (V), Photodiode stdev (V), Temp. Setpoint (C), Temp. (C), Thermometer voltage (V), Thermometer stdev (V), Output, Output stdev (V),  Temp. Loop Index, Kp = ' + str(Kp) + ",Ki = " + str(Ki) + ",Kd = " + str(Kd) + '\n')
+f.close()
 
 # Initialize LabJack (uses LabJackPython)
 d = u3.U3()
