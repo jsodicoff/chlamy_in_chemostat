@@ -33,10 +33,10 @@ import os
 from PID import PID
 
 # Import thermometer and system number calibration file
-calibration_file = open('calibration.sys','r')
-calibration = np.genfromtxt(calibration_file,delimiter=',')
-calibration_file.close()
-systemNumber=int(calibration[0]+0.1)
+#calibration_file = open('calibration.sys','r')
+#calibration = np.genfromtxt(calibration_file,delimiter=',')
+#calibration_file.close()
+systemNumber=1#int(calibration[0]+0.1)
 
 # Create a folder with today's date, and generate a data output file (without overwriting)
 path = str(datetime.date.today())
@@ -62,8 +62,8 @@ if os.path.isfile(path + filetype):
 ###########################
 # START CONTROL VARIABLES #
 ###########################
-thirtyDegVolt=calibration[1] # SHOULD NOT TYPICALLY BE CHANGED: Voltage from calibration file corresponding to 30 degrees Celsius
-degVoltScale=calibration[2] # SHOULD NOT TYPICALLY BE CHANGED: Thermometer degree-volt scaling near 30 degrees Celsius
+thirtyDegVolt=10#calibration[1] # SHOULD NOT TYPICALLY BE CHANGED: Voltage from calibration file corresponding to 30 degrees Celsius
+degVoltScale=10#calibration[2] # SHOULD NOT TYPICALLY BE CHANGED: Thermometer degree-volt scaling near 30 degrees Celsius
 ###########################
 useAlgaeLED=True # Algae LED only on when set to True
 algaeDimming=80##INCREASED brightness # Dimming value 0-255 (0 is brightest). Irrelevant if useAlgaeLED is False
@@ -87,7 +87,7 @@ cultureRun=False # Almost always False. Culture run check. If True, INPUT/OUTPUT
 # returns to the row indicated by pumpCycleReturnIndex.
 ###########################
 tempCycle=[[30,24]]##*60]] # SHOULD NOT TYPICALLY BE CHANGED: Controls temperature
-lightCycle = [[115, 24],[250,24]]##*60]]
+LEDCycle = [[115, 24],[250,24]]##*60]]
 ###########################
 #  END CONTROL VARIABLES  #
 ###########################
@@ -201,7 +201,7 @@ def readOD():
                 # If there's a serious error, but an exception was not called,
                 # record OD as -1.
                 if r['errors'] != 0:
-                    print "Error: %s ; " % r['errors']
+                    print( "Error: %s ; " % r['errors'])
                     tempOD = -1
                 # Otherwise, if at least 15 readings were recorded...
                 elif len(r['AIN7']) > 15:
@@ -209,12 +209,12 @@ def readOD():
                     # data packets, still try to record OD, but record with
                     # negative value
                     if r['numPackets'] != d.packetsPerRequest:
-                        print "----- UNDERFLOW : %s : " % r['numPackets']
+                        print( "----- UNDERFLOW : %s : " % r['numPackets'])
                         tempOD = -sum(r['AIN7'][5:15])/10.0
                         stdev = -np.std(r['AIN7'][5:15])
                     elif r['missed'] != 0:
                         missed += r['missed']
-                        print "+++ Missed ", r['missed']
+                        print( "+++ Missed ", r['missed'])
                         tempOD = -sum(r['AIN7'][5:15])/10.0
                         stdev = -np.std(r['AIN7'][5:15])
                     else:
@@ -227,11 +227,11 @@ def readOD():
                     tempOD = -1
             else:
                 # If no data was received, record OD as -1.
-                print "No data"
+                print( "No data")
                 tempOD = -1
             dataCount += 1
     except:
-        print "".join(i for i in traceback.format_exc())
+        print( "".join(i for i in traceback.format_exc()))
     finally:
         # Stop streaming data and return LabJack to normal operation.
         d.streamStop()
@@ -311,7 +311,7 @@ while 1==1: # Program only halted manually...
     times.append(time.time()-initialtime) # Save times of sub-second-interval temperature measurements... this isn't really used for anything
     
     if not bufferError: # If no problems writing to data file, print some info to the console
-        print str(lastCycle) + ': ' + str(tempAvg) + " (goal: " + str(goal) + ") (output: " + str(lastOutput) + ") (od: " + str(lastOD) + ")"
+        print( str(lastCycle) + ': ' + str(tempAvg) + " (goal: " + str(goal) + ") (output: " + str(lastOutput) + ") (od: " + str(lastOD) + ")")
     
     output = p.compute(tempAvg) # Ask PID what to do with temperature control based on thermometer reading
     tempAvgs.append(tempAvg) # Temporarily save temperature value
@@ -342,7 +342,7 @@ while 1==1: # Program only halted manually...
                 dataBuffer.pop(0) # Drop the oldest minute's worth of data
             # Buffer all the data from this minute in case there's an error writing to data file
             ## clear all of this out
-            dataBuffer.append([p.GetCycle()/60,lastOD,diodeStd,voltsToDegree(goal),voltsToDegree(np.average(bufferedTemps)),np.average(bufferedTemps),np.std(bufferedTemps),np.average(bufferedOutputs),np.std(bufferedOutputs),startPump,tempLoopIndex,pumpFlowIndex])
+            dataBuffer.append([p.GetCycle()/60,lastOD,diodeStd,voltsToDegree(goal),voltsToDegree(np.average(bufferedTemps)),np.average(bufferedTemps),np.std(bufferedTemps),np.average(bufferedOutputs),np.std(bufferedOutputs),tempLoopIndex])
             # Clear the minute-scale buffers
             bufferedTemps=[]
             bufferedOutputs=[]
@@ -350,13 +350,13 @@ while 1==1: # Program only halted manually...
             try: # Try to save all the data in the buffer, or specifically this minute's data
                 f = open(path+filetype,'a')
                 for i in range(len(dataBuffer)):
-                    f.write(str(dataBuffer[i][0])+','+str(dataBuffer[i][1])+','+str(dataBuffer[i][2])+','+str(dataBuffer[i][3])+','+str(dataBuffer[i][4])+','+str(dataBuffer[i][5])+','+str(dataBuffer[i][6])+','+str(dataBuffer[i][7])+','+str(dataBuffer[i][8])+','+str(dataBuffer[i][9])+','+str(dataBuffer[i][10])+','+str(dataBuffer[i][11])+'\n')
+                    f.write(str(dataBuffer[i][0])+','+str(dataBuffer[i][1])+','+str(dataBuffer[i][2])+','+str(dataBuffer[i][3])+','+str(dataBuffer[i][4])+','+str(dataBuffer[i][5])+','+str(dataBuffer[i][6])+','+str(dataBuffer[i][7])+','+str(dataBuffer[i][8])+','+str(dataBuffer[i][9])+'\n')
                 dataBuffer=[]
                 bufferError=False
                 f.close()
             except: # We can't write to the data file (is it locked?)! Nothing's being saved (except images)!
                 bufferError=True
-                print "Error printing to file! Please close any programs using it. Buffering up to 10 hours of data..."
+                print( "Error printing to file! Please close any programs using it. Buffering up to 10 hours of data...")
         
             if p.GetCycle() >= nextTempSwitch: # If it's time for the tempCycle to advance one step...
                     tempLoopIndex+=1 # Advance the tempCycle one step
