@@ -22,6 +22,7 @@ Created on Jan 21, 2014
 # C program.
 
 import u3 # LabJackPython import
+import math
 import numpy as np
 import time
 import traceback
@@ -98,7 +99,10 @@ def temp_f(s):
     return(30)
     
 def LED_f(s):
-    return(100)
+    if s % 10 == 0:
+        print(math.floor(s/10)*10)
+    return(math.floor(s/10)*10)
+    #return(100)
     # if s < 30:
         # return((10/3)*s)
     # elif s < 45:
@@ -160,14 +164,14 @@ def degreesToVolts(numDegrees):
 goal = degreesToVolts(tempCycle[0][0])
 
 def uMToLED(uM):
-    uM = uM-2 #drift?
-    LED_out = int(a_uM*uM**2+b_uM*uM+c_uM)
-    if LED_out > 255:
-        LED_out = 255
-    elif LED_out < 0:
-        LED_out = 0
-    print(LED_out)
-    return(LED_out)
+    # LED_out = int(a_uM*uM**2+b_uM*uM+c_uM)
+    # if LED_out > 255:
+        # LED_out = 255
+    # elif LED_out < 0:
+        # LED_out = 0
+    # print(LED_out)
+    # return(LED_out)
+    return(uM)
 
 # Print header rows for data file
 f = open(path+filetype,'w')
@@ -389,25 +393,6 @@ while 1==1: # Program only halted manually...
         if new_temp != goal:
             p.setSetpoint(degreesToVolts(new_temp))
             goal = degreesToVolts(new_temp)
-            
-        
-        
-        # if p.GetCycle() >= nextTempSwitch: # If it's time for the tempCycle to advance one step...
-                # tempLoopIndex+=1 # Advance the tempCycle one step
-                # if tempLoopIndex == len(tempCycle):
-                    # tempLoopIndex=0 # If we reached the end of the cycle, start over from the beginning
-                # nextTempSwitch+=tempCycle[tempLoopIndex][1]
-                # p.setSetpoint(degreesToVolts(tempCycle[tempLoopIndex][0])) # Tell PID we're changing the temperature setpoint
-                # goal= degreesToVolts(tempCycle[tempLoopIndex][0])
-        
-        # if p.GetCycle() >= nextLEDSwitch: # If it's time for the tempCycle to advance one step...
-                # LEDLoopIndex+=1 # Advance the tempCycle one step
-                # if LEDLoopIndex == len(LEDCycle):
-                    # LEDLoopIndex=0 # If we reached the end of the cycle, start over from the beginning
-                # nextLEDSwitch+=LEDCycle[LEDLoopIndex][1]
-                # d.setDOState(algaePin,1)
-                # d.getFeedback([u3.DAC8(1,uMToLED(LEDCycle[LEDLoopIndex][0]))])
-                # d.setDOState(algaePin,0)
         
 
 
