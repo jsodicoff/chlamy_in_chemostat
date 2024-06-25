@@ -27,6 +27,7 @@ import numpy as np
 import time
 import traceback
 import subprocess
+import sys
 import datetime
 import os
 
@@ -59,17 +60,18 @@ if os.path.isfile(path + filetype):
         testNum+=1
     path=path+'_' + str(testNum)
 
-#print("AAAAA")
+config_file = sys.argv[0]
 
 ###########################
 # START CONTROL VARIABLES #
 ###########################
-thirtyDegVolt=0.61898#calibration[1] # SHOULD NOT TYPICALLY BE CHANGED: Voltage from calibration file corresponding to 30 degrees Celsius
-degVoltScale=7.8547#calibration[2] # SHOULD NOT TYPICALLY BE CHANGED: Thermometer degree-volt scaling near 30 degrees Celsius
+f = open(config_file, "r")
+thirtyDegVolt= float(f.readline())#calibration[1] # SHOULD NOT TYPICALLY BE CHANGED: Voltage from calibration file corresponding to 30 degrees Celsius
+degVoltScale= float(f.readline())#calibration[2] # SHOULD NOT TYPICALLY BE CHANGED: Thermometer degree-volt scaling near 30 degrees Celsius
 
-a_uM = -0.004522
-b_uM = -0.627669
-c_uM = 210.90477
+a_uM = float(f.readline())
+b_uM = float(f.readline())
+c_uM = float(f.readline())
 
 # Temperature/pump cycle format: 2-column array controlling the temperature
 # and flow cycles of the chemostat. Each row corresponds to one step in the
@@ -89,22 +91,26 @@ c_uM = 210.90477
 ###########################
 tempCycle=[[30,24]]##*60]] # SHOULD NOT TYPICALLY BE CHANGED: Controls temperature
 LEDCycle = [[100,10]]##*60]]
-def temp_f(s):
-    return(30)
-    
-def LED_f(s):
-    if s % 10 == 0:
-        print(math.floor(s/10)*10)
-    return(math.floor(s/10)*10)
-    #return(100)
-    # if s < 30:
-        # return((10/3)*s)
-    # elif s < 45:
-        # return(100)
-    # elif s < 75:
-        # return(100-(10/3)*(s-45))
-    # else:
-        # return(0)
+
+if len(sys.argv) > 1:
+    os.system(sys.argv[1])
+else :
+    def temp_f(s):
+        return(30)
+        
+    def LED_f(s):
+        if s % 10 == 0:
+            print(math.floor(s/10)*10)
+        return(math.floor(s/10)*10)
+        #return(100)
+        # if s < 30:
+            # return((10/3)*s)
+        # elif s < 45:
+            # return(100)
+        # elif s < 75:
+            # return(100-(10/3)*(s-45))
+        # else:
+            # return(0)
 ###########################
 #  END CONTROL VARIABLES  #
 ###########################
