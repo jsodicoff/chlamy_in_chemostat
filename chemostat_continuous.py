@@ -164,14 +164,12 @@ def degreesToVolts(numDegrees):
 goal = degreesToVolts(tempCycle[0][0])
 
 def uMToLED(uM):
-    # LED_out = int(a_uM*uM**2+b_uM*uM+c_uM)
-    # if LED_out > 255:
-        # LED_out = 255
-    # elif LED_out < 0:
-        # LED_out = 0
-    # print(LED_out)
-    # return(LED_out)
-    return(uM)
+    LED_out = int(a_uM*uM**3+b_uM*uM**2+c_uM*uM+d_uM)
+    if LED_out > 255:
+        LED_out = 255
+    elif LED_out < 0:
+        LED_out = 0
+    return(LED_out)
 
 # Print header rows for data file
 f = open(path+filetype,'w')
