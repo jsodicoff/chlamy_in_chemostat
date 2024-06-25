@@ -28,6 +28,7 @@ import time
 import traceback
 import subprocess
 import sys
+import importlib
 import datetime
 import os
 
@@ -60,12 +61,13 @@ if os.path.isfile(path + filetype):
         testNum+=1
     path=path+'_' + str(testNum)
 
-config_file = sys.argv[0]
+config_file = sys.argv[1]
 
 ###########################
 # START CONTROL VARIABLES #
 ###########################
 f = open(config_file, "r")
+
 thirtyDegVolt= float(f.readline())#calibration[1] # SHOULD NOT TYPICALLY BE CHANGED: Voltage from calibration file corresponding to 30 degrees Celsius
 degVoltScale= float(f.readline())#calibration[2] # SHOULD NOT TYPICALLY BE CHANGED: Thermometer degree-volt scaling near 30 degrees Celsius
 
@@ -73,8 +75,8 @@ a_uM = float(f.readline())
 b_uM = float(f.readline())
 c_uM = float(f.readline())
 d_uM = float(f.readline())
-total_run = float(f.readline())
-od_seconds = float(f.readline())
+total_run = int(f.readline())
+od_seconds = int(f.readline())
 
 
 # Temperature/pump cycle format: 2-column array controlling the temperature
@@ -93,11 +95,9 @@ od_seconds = float(f.readline())
 # a target of 30 degrees Celsius. At the end of a pumpCycle, the control loop
 # returns to the row indicated by pumpCycleReturnIndex.
 ###########################
-tempCycle=[[30,24]]##*60]] # SHOULD NOT TYPICALLY BE CHANGED: Controls temperature
-LEDCycle = [[100,10]]##*60]]
-
-if len(sys.argv) > 1:
-    os.system(sys.argv[1])
+if len(sys.argv) > 2:
+    with open(sys.argv[2]) as py_file:
+        exec(compile(py_file.read(), sys.argv[2], "exec"))
 else :
     def temp_f(s):
         return(30)
@@ -119,8 +119,6 @@ else :
 #  END CONTROL VARIABLES  #
 ###########################
 
-for i in tempCycle:
-    i[1]=i[1]*60 # Temperature cycle control code functions at the level of seconds, not minutes
 
 # Thermometer pin on LabJack
 tempPin=0
@@ -165,7 +163,7 @@ def degreesToVolts(numDegrees):
     return (numDegrees-30)*degVoltScale+thirtyDegVolt
 
 # Initial temperature goal based on tempCycle
-goal = degreesToVolts(tempCycle[0][0])
+goal = degreesToVolts(temp_f(0))
 
 def uMToLED(uM):
     LED_out = int(a_uM*uM**3+b_uM*uM**2+c_uM*uM+d_uM)
@@ -187,6 +185,8 @@ d.getCalibrationData()
 # Initialize LabJack pin types and pin values
 d.configIO(FIOAnalog = 129)
 d.setDOState(algaePin,1)
+d.getFeedback([u3.DAC8(1,255)])
+d.setDOState(algaePin,0)    
 d.setDOState(IRPin,1)
 d.configIO( NumberOfTimersEnabled = 1 )
 baseValue = 65535.0
@@ -197,10 +197,11 @@ def readOD():
     d.streamConfig( NumChannels = 1, PChannels = [ 7 ], NChannels = [ 31 ], Resolution = 0, ScanFrequency = 100, SamplesPerPacket=24 )
     tempOD=-1.0
     stdev=0
+    
     try:
         d.setDOState(algaePin,1)
         d.getFeedback([u3.DAC8(1,255)])
-        d.setDOState(algaePin,0)
+        d.setDOState(algaePin,0)    
         
         d.setDOState(IRPin,0) # Turn on IR LED
         time.sleep(.05) # Briefly wait until after photodiode voltage spike
@@ -267,8 +268,7 @@ def readOD():
         d.streamStop()
     return tempOD, stdev
 
-# This variable stores the most recent OD value
-lastOD = readOD()[0]
+
 # Initial temperature value (un-averaged)
 temp0 = d.getAIN(tempPin)
 
@@ -303,12 +303,14 @@ def updatePWM(newOutput):
         d.getFeedback( u3.Timer0( Value =  -(int)((1.0-(newOutput/100.0))*baseValue), UpdateReset = True ) )
 
 tempLoopIndex=0 # Start temperature control loop
-nextTempSwitch=tempCycle[0][1] # Next second to trigger tempCycle step
 
 LEDLoopIndex=0 # Start LED control loop
-nextLEDSwitch=LEDCycle[0][1] # Next second to trigger LED step
 
 initialtime=time.time() # Start time for experiment
+
+# This variable stores the most recent OD value
+new_LED = 0
+lastOD = readOD()[0]
 
 # Read temperature as a voltage, averaging over multiple thermometer measurements
 def readTemp():
@@ -331,9 +333,18 @@ bufferedOutputs=[]
 # THIS IS THE ACTUAL CONTROL LOOP #
 ###################################
 
+s = 0
 
-while s <= total_run: # Program only halted manually...
+while s < total_run: # Program only halted manually...
     tempAvg = readTemp() # Record temperature
+
+    s = p.GetCycle()
+
+    new_LED = LED_f(s)
+    
+    d.setDOState(algaePin,1)
+    d.getFeedback([u3.DAC8(1,uMToLED(new_LED))])
+    d.setDOState(algaePin,0)
     
     times.append(time.time()-initialtime) # Save times of sub-second-interval temperature measurements... this isn't really used for anything
     
@@ -385,13 +396,8 @@ while s <= total_run: # Program only halted manually...
                 bufferError=True
                 print( "Enerror printing to file! Please close any programs using it. Buffering up to 10 hours of data...")
         
-        s = p.GetCycle()
         new_temp = temp_f(s)
-        new_LED = LED_f(s)
         
-        d.setDOState(algaePin,1)
-        d.getFeedback([u3.DAC8(1,uMToLED(new_LED))])
-        d.setDOState(algaePin,0)
         
         if new_temp != goal:
             p.setSetpoint(degreesToVolts(new_temp))
@@ -404,3 +410,9 @@ while s <= total_run: # Program only halted manually...
         lastCycle = p.GetCycle()
         tempAvgs = []
         times=[]
+        
+d.setDOState(algaePin,1)
+d.getFeedback([u3.DAC8(1,255)])
+d.setDOState(algaePin,0)
+d.setDOState(pwmAPin,0)
+d.setDOState(pwmBPin,0)
