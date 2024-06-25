@@ -72,6 +72,10 @@ degVoltScale= float(f.readline())#calibration[2] # SHOULD NOT TYPICALLY BE CHANG
 a_uM = float(f.readline())
 b_uM = float(f.readline())
 c_uM = float(f.readline())
+d_uM = float(f.readline())
+total_run = float(f.readline())
+od_seconds = float(f.readline())
+
 
 # Temperature/pump cycle format: 2-column array controlling the temperature
 # and flow cycles of the chemostat. Each row corresponds to one step in the
@@ -328,7 +332,7 @@ bufferedOutputs=[]
 ###################################
 
 
-while 1==1: # Program only halted manually...
+while s <= total_run: # Program only halted manually...
     tempAvg = readTemp() # Record temperature
     
     times.append(time.time()-initialtime) # Save times of sub-second-interval temperature measurements... this isn't really used for anything
@@ -351,7 +355,7 @@ while 1==1: # Program only halted manually...
         bufferedTemps.append(tempAvg) # Temporarily save temperature averages from this minute
         bufferedOutputs.append(lastOutput) # Temporarily save PID output values from this minute
             
-        if p.GetCycle() % 10 == 0: # If it's a new MINUTE, was 60
+        if p.GetCycle() % od_seconds == 0: # If it's a new MINUTE, was 60
             lastOD, diodeStd = readOD() # Read the OD, once at the very beginning
             # Ignore this commented out bit...
             '''if not startPump:
