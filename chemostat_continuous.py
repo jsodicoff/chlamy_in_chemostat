@@ -71,12 +71,6 @@ a_uM = -0.004522
 b_uM = -0.627669
 c_uM = 210.90477
 
-###########################
-useAlgaeLED=True # Algae LED only on when set to True
-algaeDimming=80##INCREASED brightness # Dimming value 0-255 (0 is brightest). Irrelevant if useAlgaeLED is False
-###########################
-cultureRun=False # Almost always False. Culture run check. If True, INPUT/OUTPUT PUMPS WILL NOT ACTIVATE REGARDLESS OF OTHER SETTINGS
-###########################
 # Temperature/pump cycle format: 2-column array controlling the temperature
 # and flow cycles of the chemostat. Each row corresponds to one step in the
 # cycle. The first element of each row is a temperature in Celsius (for tempCycle)
@@ -175,8 +169,8 @@ def uMToLED(uM):
 
 # Print header rows for data file
 f = open(path+filetype,'w')
-f.write('System ' + str(systemNumber) + ', Temp Cycle: ' + str(tempCycle)+'\n')
-f.write('Time (m),Photodiode voltage (V), Photodiode stdev (V), Temp. Setpoint (C), Temp. (C), Thermometer voltage (V), Thermometer stdev (V), Output, Output stdev (V),  Temp. Loop Index, Kp = ' + str(Kp) + ",Ki = " + str(Ki) + ",Kd = " + str(Kd) + '\n')
+#f.write('System ' + str(systemNumber) + ', Temp Cycle: ' + str(tempCycle)+'\n')
+f.write('Time (m),Photodiode voltage (V), Photodiode stdev (V), Temp. Setpoint (C), Temp. (C), Thermometer voltage (V), Thermometer stdev (V), Output, Output stdev (V),  Temp. Loop Index')#, Kp = ' + str(Kp) + ",Ki = " + str(Ki) + ",Kd = " + str(Kd) + '\n')
 f.close()
 
 # Initialize LabJack (uses LabJackPython)
@@ -185,10 +179,6 @@ d.getCalibrationData()
 # Initialize LabJack pin types and pin values
 d.configIO(FIOAnalog = 129)
 d.setDOState(algaePin,1)
-if(useAlgaeLED):
-    d.getFeedback([u3.DAC8(1,uMToLED(LED_f(0)))])
-    d.setDOState(algaePin,0)
-## d.setDOState(inflowPin,1)
 d.setDOState(IRPin,1)
 d.configIO( NumberOfTimersEnabled = 1 )
 baseValue = 65535.0
@@ -200,11 +190,19 @@ def readOD():
     tempOD=-1.0
     stdev=0
     try:
+        d.setDOState(algaePin,1)
+        d.getFeedback([u3.DAC8(1,255)])
+        d.setDOState(algaePin,0)
+        
         d.setDOState(IRPin,0) # Turn on IR LED
         time.sleep(.05) # Briefly wait until after photodiode voltage spike
         d.streamStart() # Begin recording data.
         time.sleep(.25)
         d.setDOState(IRPin,1) # Turn off IR LED
+
+        d.setDOState(algaePin,1)
+        d.getFeedback([u3.DAC8(1,uMToLED(new_LED))])
+        d.setDOState(algaePin,0)
         
         missed = 0
         dataCount = 0
@@ -324,10 +322,7 @@ bufferedOutputs=[]
 ###################################
 # THIS IS THE ACTUAL CONTROL LOOP #
 ###################################
-d.setDOState(algaePin,1)
-if(useAlgaeLED):
-    d.getFeedback([u3.DAC8(1,algaeDimming)])
-    d.setDOState(algaePin,0)
+
 
 while 1==1: # Program only halted manually...
     tempAvg = readTemp() # Record temperature
