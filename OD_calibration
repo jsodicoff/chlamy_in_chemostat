@@ -17,4 +17,4 @@ def temp_f(s):
       return(40)
         
 def LED_f(s):
-    return(100)
+    return(0)
