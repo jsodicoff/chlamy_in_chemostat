@@ -70,6 +70,7 @@ f = open(config_file, "r")
 
 thirtyDegVolt= float(f.readline())#calibration[1] # SHOULD NOT TYPICALLY BE CHANGED: Voltage from calibration file corresponding to 30 degrees Celsius
 degVoltScale= float(f.readline())#calibration[2] # SHOULD NOT TYPICALLY BE CHANGED: Thermometer degree-volt scaling near 30 degrees Celsius
+LEDVoltScale = float(f.readline())
 
 a_uM = float(f.readline())
 b_uM = float(f.readline())
@@ -155,15 +156,15 @@ lastOutput = 0
 lastCycle = 0
 
 # Return the thermometer voltage corresponding to a temperature in Celsius
-def voltsToDegree(numVolts):
-    return (numVolts-thirtyDegVolt)/degVoltScale+30
+def voltsToDegree(numVolts, LED):
+    return (numVolts - thirtyDegVolt - LED*LEDVoltScale)/degVoltScale
 
 # Return the temperature in Celsius corresponding to a thermometer voltage
-def degreesToVolts(numDegrees):
-    return (numDegrees-30)*degVoltScale+thirtyDegVolt
+def degreesToVolts(numDegrees, LED):
+    return numDegrees*degVoltScale+ LED*LEDVoltScale+thirtyDegVolt
 
 # Initial temperature goal based on tempCycle
-goal = degreesToVolts(temp_f(0))
+goal = degreesToVolts(temp_f(0),LED_f(0))
 
 def uMToLED(uM):
     LED_out = int(a_uM*uM**3+b_uM*uM**2+c_uM*uM+d_uM)
@@ -380,7 +381,7 @@ while s < total_run: # Program only halted manually...
                 dataBuffer.pop(0) # Drop the oldest minute's worth of data
             # Buffer all the data from this minute in case there's an error writing to data file
             ## clear all of this out
-            dataBuffer.append([p.GetCycle()/60,lastOD,diodeStd,voltsToDegree(goal),voltsToDegree(np.average(bufferedTemps)),np.average(bufferedTemps),np.std(bufferedTemps),np.average(bufferedOutputs),np.std(bufferedOutputs),tempLoopIndex])
+            dataBuffer.append([p.GetCycle()/60,lastOD,diodeStd,voltsToDegree(goal,new_LED),voltsToDegree(np.average(bufferedTemps),new_LED),np.average(bufferedTemps),np.std(bufferedTemps),np.average(bufferedOutputs),np.std(bufferedOutputs),tempLoopIndex])
             # Clear the minute-scale buffers
             bufferedTemps=[]
             bufferedOutputs=[]
@@ -400,8 +401,8 @@ while s < total_run: # Program only halted manually...
         
         
         if new_temp != goal:
-            p.setSetpoint(degreesToVolts(new_temp))
-            goal = degreesToVolts(new_temp)
+            p.setSetpoint(degreesToVolts(new_temp,new_LED))
+            goal = degreesToVolts(new_temp,new_LED)
         
 
 
